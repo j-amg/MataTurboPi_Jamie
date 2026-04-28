@@ -42,14 +42,6 @@ myRobot.horn()
 myRobot.buzzer.horn()
 ```
 
-### Switch movement backend
-
-```python
-myRobot.use_base_moves()
-myRobot.use_robot_moves()
-myRobot.use_student_moves()
-```
-
 ### Status and versions
 
 ```python
@@ -90,34 +82,6 @@ myRobot.move.diagonal_left(seconds=0.8, speed=100)
 myRobot.move.diagonal_right(seconds=0.8, speed=100)
 myRobot.move.drift_left(seconds=1.0, speed=100, turn_blend=0.55)
 myRobot.move.drift_right(seconds=1.0, speed=100, turn_blend=0.55)
-```
-
-### Generic movement call
-
-```python
-myRobot.move.run("forward", seconds=0.5, speed=100)
-myRobot.move.run("left", seconds=0.3, speed=80)
-```
-
-### Drive with `vx` and `vy`
-
-```python
-myRobot.move.drive_for(vx=0.2, vy=0.0, seconds=0.5)
-```
-
-### Stop and async run
-
-```python
-myRobot.move.stop()
-thread = myRobot.move.run_async("forward", seconds=0.5, speed=80)
-```
-
-### Choose movement backend from the namespace
-
-```python
-myRobot.move.use_base()
-myRobot.move.use_robot_moves()
-myRobot.move.use_student()
 ```
 
 ## `myRobot.eyes`
@@ -368,64 +332,6 @@ myRobot.ultrasonic.distance_cm()
 myRobot.ultra.distance_cm()
 ```
 
-## `myRobot.infrared`
-
-This namespace passes through to `infrared_lib`. Common use is to read the raw line sensor state.
-
-```python
-myRobot.infrared.read()
-```
-
-If the backend library exposes more methods, they are also available through the namespace.
-
-## `myRobot.line`
-
-### Choose the line follower mode
-
-```python
-myRobot.line.use_pid()
-myRobot.line.use_camera()
-```
-
-The returned backend still exposes its own methods. For example:
-
-```python
-line = myRobot.line.use_pid()
-line.start()
-line.stop()
-```
-
-## `myRobot.tracking`
-
-This namespace passes through to `tracking_lib`.
-
-Examples used in the lessons:
-
-```python
-myRobot.tracking.set_color_name("green")
-myRobot.tracking.start()
-myRobot.tracking.set_pan_tilt(True)
-myRobot.tracking.stop()
-```
-
-## `myRobot.avoidance`
-
-This namespace passes through to `avoidance_lib`.
-
-```python
-myRobot.avoidance.start()
-myRobot.avoidance.stop()
-```
-
-## `myRobot.qrcode`
-
-This namespace passes through to `qrcode_lib`.
-
-```python
-myRobot.qrcode.start()
-myRobot.qrcode.stop()
-```
-
 ## Common classroom patterns
 
 ### Move, then stop
@@ -461,5 +367,4 @@ else:
 ## Notes
 
 - The V2 wrapper exposes the most important robot actions under one object: `myRobot`.
-- Some namespaces, such as `infrared`, `tracking`, `avoidance`, and `qrcode`, also expose backend-specific methods through passthrough access.
 - Some features need matching ROS services or nodes to be running on the robot image.
