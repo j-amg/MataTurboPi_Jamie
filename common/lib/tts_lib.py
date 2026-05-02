@@ -1,4 +1,4 @@
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 # tts_lib.py
 # Piper TTS helper for Matamoe robots (Python 3.10)
@@ -39,6 +39,8 @@ VOLUME_CONTROLS = tuple(
     for name in os.environ.get("ROBOT_VOLUME_CONTROLS", "Master,PCM,Speaker").split(",")
     if name.strip()
 )
+DEFAULT_AUDIO_VOLUME = max(0, min(100, int(os.environ.get("ROBOT_DEFAULT_AUDIO_VOLUME", "40"))))
+_DEFAULT_VOLUME_READY = False
 
 
 def available_voices(installed_only: bool = True) -> list[str]:
@@ -209,6 +211,21 @@ def get_volume(control: Optional[str] = None) -> dict:
     return {"ok": True, "control": chosen, "volume": volume, "raw": proc.stdout}
 
 
+def ensure_default_volume(percent: int = DEFAULT_AUDIO_VOLUME, control: Optional[str] = None) -> dict:
+    """
+    Set the default ALSA playback volume once per process.
+    This keeps speech output at a classroom-friendly level without requiring
+    each lesson to call set_volume manually.
+    """
+    global _DEFAULT_VOLUME_READY
+    if _DEFAULT_VOLUME_READY:
+        chosen = _pick_volume_control(control)
+        return {"ok": True, "control": chosen, "volume": _clamp_volume_percent(percent), "cached": True}
+    result = set_volume(percent, control=control)
+    _DEFAULT_VOLUME_READY = True
+    return result
+
+
 def synth_to_wav(
     text: str,
     voice: Optional[str] = None,
@@ -301,6 +318,10 @@ def play_wav_async(path: str, device: Optional[str] = None):
     Play wav using aplay (returns subprocess.Popen).
     """
     _require_aplay()
+    try:
+        ensure_default_volume()
+    except Exception as e:
+        print("[tts_lib] warn: could not set default volume:", e)
     cmd = ["aplay"]
     if device:
         cmd += ["-D", device]

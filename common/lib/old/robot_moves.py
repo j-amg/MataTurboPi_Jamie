@@ -152,7 +152,7 @@ def drift_demo(cycles: int = 2, per_side_seconds: float = 3.0):
 HORN_FILE   = os.environ.get("HORN_FILE", "meepmeep.mp3")
 HORN_CMD    = os.environ.get("HORN_CMD", "mpg123")
 HORN_DEVICE = os.environ.get("HORN_DEVICE")
-HORN_DEFAULT_VOLUME = int(os.environ.get("HORN_DEFAULT_VOLUME", "22"))  # 0..100
+HORN_DEFAULT_VOLUME = int(os.environ.get("HORN_DEFAULT_VOLUME", "40"))  # 0..100
 
 
 def _safe_cwd_path() -> Path:
