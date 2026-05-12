@@ -48,7 +48,6 @@ def resolve_common_lib(root: Path) -> Path:
 
     candidates.extend([
         Path("/opt/robot/students/lessons_cache/common/lib"),
-        Path("/opt/robot/students/lesson_cache/common/lib"),
         root / "common" / "lib",
         Path("/opt/robot/common/lib"),
     ])
@@ -77,7 +76,6 @@ def resolve_lessons_lib(root: Path) -> Path:
     candidates.extend([
         root / "lessons" / "lib",
         Path("/opt/robot/students/lessons_cache/lessons/lib"),
-        Path("/opt/robot/students/lesson_cache/lessons/lib"),
         Path("/opt/robot/lessons/lib"),
     ])
 
