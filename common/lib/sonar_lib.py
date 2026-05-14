@@ -9,8 +9,8 @@ import os
 import threading
 import time
 from collections import deque
-from statistics import mean
-from typing import Deque, Optional
+from statistics import mean, stdev
+from typing import Deque, List, Optional
 from ros_service_client import clear_process_singleton, get_process_singleton, set_process_singleton
 
 try:
@@ -29,6 +29,30 @@ else:
 
 
 DEFAULT_TOPIC = os.environ.get("SONAR_TOPIC", "/sonar_controller/get_distance").strip() or "/sonar_controller/get_distance"
+
+# Outlier rejection: readings more than this many std-devs from the window mean
+# are discarded before averaging.  1.5 removes spikes while keeping valid data.
+_OUTLIER_SIGMA = float(os.environ.get("SONAR_OUTLIER_SIGMA", "1.5"))
+
+
+def _filtered_mean(samples: List[int]) -> float:
+    """
+    Return a robust mean of sonar samples with outlier rejection.
+
+    Steps (mirrors Hiwonder's avoidance approach):
+      1. With ≤ 2 samples, use simple mean (not enough data to detect outliers).
+      2. Calculate window mean and std dev.
+      3. Discard any sample more than _OUTLIER_SIGMA std-devs from the mean.
+      4. Average the survivors; fall back to simple mean if all are rejected.
+    """
+    if len(samples) <= 2:
+        return mean(samples)
+    mu = mean(samples)
+    sigma = stdev(samples)
+    if sigma == 0.0:
+        return mu  # all identical — no outliers possible
+    survivors = [v for v in samples if abs(v - mu) <= _OUTLIER_SIGMA * sigma]
+    return mean(survivors) if survivors else mu
 
 
 def _require_runtime() -> None:
@@ -103,7 +127,8 @@ class Sonar(Node):
 
     def get_distance_mm(self, filtered: bool = False) -> int:
         if filtered and self._samples:
-            return int(round(float(mean(self._samples))))
+            # Use outlier-rejecting mean for improved reliability on noisy hardware.
+            return int(round(_filtered_mean(list(self._samples))))
         if self._last_mm is None:
             return 0
         return int(self._last_mm)

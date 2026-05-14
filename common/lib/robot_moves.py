@@ -143,6 +143,52 @@ def drift_demo(cycles: int = 2, per_side_seconds: float = 1.2, speed: float = No
         drift_right(per_side_seconds, speed=speed)
         time.sleep(0.15)
 
+# --------------------------- set_velocity (polar mecanum) ----------------------
+def set_velocity(
+    speed: float,
+    direction_deg: float = 90.0,
+    angular_rate: float = 0.0,
+    seconds: float = 0.05,
+    speed_override: Optional[float] = None,
+) -> None:
+    """
+    Polar-coordinate mecanum drive — mirrors the Hiwonder SDK API.
+
+    Args:
+        speed:         Motor speed units (same scale as base_speed / other moves).
+        direction_deg: Direction of travel in degrees.
+                       90 = forward, 270 = backward, 0 = strafe right, 180 = strafe left.
+        angular_rate:  Yaw rotation added on top of translation.
+                       Positive → yaw right (clockwise), negative → yaw left.
+                       Normalised to ±1; typical line-following range ±0.8.
+        seconds:       Duration to hold this velocity.
+        speed_override: If given, overrides the speed parameter.
+
+    Mecanum wheel mix (matching Hiwonder mecanum.py sign convention):
+        vx  = speed * cos(direction_deg)   — lateral  component
+        vy  = speed * sin(direction_deg)   — forward  component
+        vp  = −angular_rate * speed        — rotation component (scaled by speed)
+        FL = vy + vx − vp
+        FR = vy − vx + vp
+        RL = vy − vx − vp
+        RR = vy + vx + vp
+    Then _spam applies the per-wheel SIGN correction for hardware polarity.
+    """
+    import math
+
+    s = float(speed_override if speed_override is not None else speed)
+    rad = math.radians(float(direction_deg))
+    vx = math.cos(rad)        # lateral  (−1..1)
+    vy = math.sin(rad)        # forward  (−1..1)
+    vp = -float(angular_rate) # rotation sign: positive ar → negative vp → yaw right
+
+    fl = (vy + vx - vp) * s
+    fr = (vy - vx + vp) * s
+    rl = (vy - vx - vp) * s
+    rr = (vy + vx + vp) * s
+    _spam(fl, fr, rl, rr, float(seconds))
+
+
 # ------------------------------- drive_for helper ------------------------------
 def drive_for(vx: float, vy: float, seconds: float, speed: float = None):
     """
@@ -267,6 +313,15 @@ class RobotMoves:
 
     def drive_for(self, vx: float, vy: float, seconds: float, speed: float = None):
         drive_for(vx=vx, vy=vy, seconds=seconds, speed=speed)
+
+    def set_velocity(
+        self,
+        speed: float,
+        direction_deg: float = 90.0,
+        angular_rate: float = 0.0,
+        seconds: float = 0.05,
+    ):
+        set_velocity(speed=speed, direction_deg=direction_deg, angular_rate=angular_rate, seconds=seconds)
 
     def horn(self, *a, **k):
         return horn(*a, **k)
