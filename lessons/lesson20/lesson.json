@@ -4,6 +4,11 @@
   "description": "A V2 challenge workspace for movement, drift, eyes, camera, sonar, vision, speech, horn, and music.",
   "levels": [
     {
+      "id": "robot_league",
+      "title": "Robot League",
+      "entry": "robot_league.ipynb"
+    },
+    {
       "id": "level_1",
       "title": "Level 1",
       "entry": "workbook.ipynb"

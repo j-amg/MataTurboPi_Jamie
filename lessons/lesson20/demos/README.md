@@ -14,5 +14,5 @@ Use it to show students:
 
 The intro lines are:
 
-- `Welcome to Poneke AI Robot League`
+- `Welcome to AI Robot League`
 - `I'm a Turbo Pi robot.`

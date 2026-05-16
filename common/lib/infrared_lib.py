@@ -13,7 +13,9 @@ from line_sensors import LineSensors
 
 
 class Infrared:
-    def __init__(self, bus_num: int = 1, address: int = 0x77, register: int = 0x01):
+    # NOTE: Hiwonder hardware ships with address 0x78.
+    # If sensors read all-False on real hardware, try scan_i2c_bus() to confirm.
+    def __init__(self, bus_num: int = 1, address: int = 0x78, register: int = 0x01):
         self.sensor = LineSensors(bus_num=bus_num, address=address, register=register)
         self.address = int(address)
         self.register = int(register)
@@ -50,7 +52,7 @@ class Infrared:
 _IR_SINGLETON: Optional[Infrared] = None
 
 
-def get_infrared(bus_num: int = 1, address: int = 0x77, register: int = 0x01) -> Infrared:
+def get_infrared(bus_num: int = 1, address: int = 0x78, register: int = 0x01) -> Infrared:
     global _IR_SINGLETON
     if _IR_SINGLETON is None:
         _IR_SINGLETON = Infrared(bus_num=bus_num, address=address, register=register)

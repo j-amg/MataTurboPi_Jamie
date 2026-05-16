@@ -3,3 +3,7 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 *.log
+
+# Auto-generated overview documents (produced by tooling, not source)
+LIBRARY_OVERVIEW.md
+*_OVERVIEW.md

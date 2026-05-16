@@ -82,12 +82,23 @@ def _detect_workspace_login_warning(start: Path) -> Optional[str]:
 
 def _raise_workspace_error(start: Path, detail: str, login_warning: Optional[str]) -> None:
     message = str(detail).strip()
-    if login_warning:
+    lower = message.lower()
+    permission_problem = (
+        "permission denied" in lower
+        or "operation not permitted" in lower
+        or "errno 13" in lower
+    )
+    if login_warning or permission_problem:
+        lead = (
+            "Student workspace access required. "
+            if permission_problem
+            else "Student workspace login required. "
+        )
         raise RuntimeError(
-            "Student workspace login required. "
-            "Please log in to the student Jupyter workspace and reopen this lesson notebook.\n"
-            f"Current path: {start}\n"
-            f"Technical detail: {message}"
+            lead
+            + "Please log in to the student Jupyter workspace and reopen this lesson notebook.\n"
+            + f"Current path: {start}\n"
+            + f"Technical detail: {message}"
         )
     raise RuntimeError(message)
 
@@ -100,6 +111,7 @@ def _resolve_common_lib(root: Path) -> Path:
             candidates.append(Path(value).expanduser())
 
     candidates.extend([
+        Path("/opt/robot/common/lib"),
         Path("/opt/robot/students/lessons_cache/common/lib"),
         Path("/opt/robot/students/lesson_cache/common/lib"),
         root / "common" / "lib",

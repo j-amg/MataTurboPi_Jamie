@@ -6,6 +6,8 @@ from pathlib import Path
 import os
 import sys
 
+__version__ = "1.6"
+
 BROKEN_CYCLONE_URI = "file:///etc/cyclonedds/config.xml"
 
 def safe_start_dir() -> Path:
@@ -39,6 +41,54 @@ def _existing_lessons_lib() -> Path | None:
     return None
 
 
+_SESSION_CANDIDATES = [
+    Path(os.environ.get("STUDENT_SESSION_PATH", "/opt/robot/lessons/state/student_session.json")),
+    Path("/opt/robot/lessons/state/student_session.json"),
+    Path("/opt/robot/students/state/student_session.json"),
+]
+
+
+def _student_session_exists() -> bool:
+    seen = set()
+    for p in _SESSION_CANDIDATES:
+        key = str(p)
+        if key in seen:
+            continue
+        seen.add(key)
+        try:
+            if p.exists():
+                return True
+        except Exception:
+            pass
+    return False
+
+
+def _missing_lib_error(lib_path: Path) -> RuntimeError:
+    if _student_session_exists():
+        msg = (
+            "\n"
+            "  Robot library files not found — the lesson bundle has not been applied yet.\n"
+            "\n"
+            "  You are logged in, but your lesson may still be loading.\n"
+            "  Please wait a moment then restart the notebook kernel and try again.\n"
+            "\n"
+            f"  (Expected library at: {lib_path})"
+        )
+    else:
+        msg = (
+            "\n"
+            "  Robot library files not found — please log in first.\n"
+            "\n"
+            "  To use this notebook:\n"
+            "  1. Open the robot web page (your teacher will give you the address)\n"
+            "  2. Enter your name and class code to log in\n"
+            "  3. Return to this notebook and restart the kernel\n"
+            "\n"
+            f"  (Expected library at: {lib_path})"
+        )
+    return RuntimeError(msg)
+
+
 def resolve_common_lib(root: Path) -> Path:
     candidates = []
     for env_name in ("MATA_COMMON_LIB_DIR", "LESSON_CACHE_COMMON_LIB_DIR"):
@@ -47,10 +97,9 @@ def resolve_common_lib(root: Path) -> Path:
             candidates.append(Path(value).expanduser())
 
     candidates.extend([
-        Path("/opt/robot/students/lessons_cache/common/lib"),
-        Path("/opt/robot/students/lesson_cache/common/lib"),
-        root / "common" / "lib",
         Path("/opt/robot/common/lib"),
+        Path("/opt/robot/students/lessons_cache/common/lib"),
+        root / "common" / "lib",
     ])
 
     seen = set()
@@ -77,7 +126,6 @@ def resolve_lessons_lib(root: Path) -> Path:
     candidates.extend([
         root / "lessons" / "lib",
         Path("/opt/robot/students/lessons_cache/lessons/lib"),
-        Path("/opt/robot/students/lesson_cache/lessons/lib"),
         Path("/opt/robot/lessons/lib"),
     ])
 
@@ -96,10 +144,10 @@ def setup_paths() -> dict:
     root = find_repo_root(start)
     common_lib = resolve_common_lib(root)
     lessons_lib = resolve_lessons_lib(root)
+    sim_enabled = str(os.environ.get("MATA_BACKEND", "")).strip().lower() == "sim" or os.environ.get("MATA_SIM", "").strip() == "1"
+    if not sim_enabled and not common_lib.exists():
+        raise _missing_lib_error(common_lib)
     sim_shims = root / "simulator" / "shims"
-
-    mode = str(os.environ.get("MATA_BACKEND", "")).strip().lower()
-    sim_enabled = mode == "sim" or os.environ.get("MATA_SIM", "").strip() == "1"
 
     sim_shims_s = str(sim_shims)
     sys.path[:] = [p for p in sys.path if p != sim_shims_s]

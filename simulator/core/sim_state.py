@@ -72,6 +72,12 @@ def _default_state() -> Dict[str, Any]:
             "message": "",
             "obstacle_id": None,
         },
+        # Infrared line sensor state — 4 boolean channels [s0, s1, s2, s3] (left→right).
+        # The simulator does not auto-compute IR from robot position; set manually for
+        # testing specific patterns, or leave as all-False (no line detected).
+        "infrared": {
+            "sensors": [False, False, False, False],
+        },
         "course": {
             "id": "default",
             "title": "Default Empty Course",
@@ -255,7 +261,7 @@ def load_state() -> Dict[str, Any]:
     for key in ("robot", "eyes", "camera"):
         if isinstance(data.get(key), dict):
             merged[key].update(data[key])
-    for key in ("lesson", "sonar", "collision", "course"):
+    for key in ("lesson", "sonar", "collision", "course", "infrared"):
         if isinstance(data.get(key), dict):
             merged[key].update(data[key])
     if isinstance(data.get("trace"), list):

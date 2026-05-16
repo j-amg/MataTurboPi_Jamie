@@ -21,7 +21,7 @@ from typing import Any, Optional
 
 from ros_service_client import clear_process_singleton, get_process_singleton, set_process_singleton
 
-__version__ = "2.4.1"
+__version__ = "2.4.2"
 
 _SINGLETON_KEY = "student_robot_v2:robot"
 _LOCK_KEY = "student_robot_v2:lock"
@@ -78,7 +78,8 @@ class MoveNamespace(_BackendProxy):
         fn = self._resolve(move_name)
         if fn is None:
             raise AttributeError(f"Move '{move_name}' is not available")
-        self._owner._status("move", move_name, f"seconds={seconds}", f"speed={speed}")
+        effective_speed = float(self._owner.base_speed) if speed is None else float(speed)
+        self._owner._status("move", move_name, f"seconds={seconds}", f"speed={effective_speed}")
         return fn(seconds=seconds, speed=speed, **kwargs)
 
     def forward(self, seconds: float = 0.5, speed: Optional[float] = None):
@@ -198,6 +199,10 @@ class CameraNamespace(_BackendProxy):
     def _get_backend(self):
         return self._owner._camera_backend
 
+    @staticmethod
+    def _clamp_amplitude(amplitude: int) -> int:
+        return max(0, min(500, int(amplitude)))
+
     def center(self):
         backend = self._ensure()
         return backend.center_all()
@@ -206,22 +211,28 @@ class CameraNamespace(_BackendProxy):
         return self.center()
 
     def left(self, amplitude: int = 250, hold_s: float = 0.15):
-        return self._owner.anim.look_left(amplitude=amplitude, hold_s=hold_s)
+        backend = self._ensure()
+        return backend.set_yaw(backend.center - self._clamp_amplitude(amplitude))
 
     def right(self, amplitude: int = 250, hold_s: float = 0.15):
-        return self._owner.anim.look_right(amplitude=amplitude, hold_s=hold_s)
+        backend = self._ensure()
+        return backend.set_yaw(backend.center + self._clamp_amplitude(amplitude))
 
     def up(self, amplitude: int = 250, hold_s: float = 0.15):
-        return self._owner.anim.look_up(amplitude=amplitude, hold_s=hold_s)
+        backend = self._ensure()
+        return backend.set_pitch(backend.center + self._clamp_amplitude(amplitude))
 
     def down(self, amplitude: int = 250, hold_s: float = 0.15):
-        return self._owner.anim.look_down(amplitude=amplitude, hold_s=hold_s)
+        backend = self._ensure()
+        return backend.set_pitch(backend.center - self._clamp_amplitude(amplitude))
 
     def glance_left(self, amplitude: int = 250, hold_s: float = 0.15):
-        return self.left(amplitude=amplitude, hold_s=hold_s)
+        backend = self._ensure()
+        return backend.glance_left(amplitude=self._clamp_amplitude(amplitude), hold_s=hold_s)
 
     def glance_right(self, amplitude: int = 250, hold_s: float = 0.15):
-        return self.right(amplitude=amplitude, hold_s=hold_s)
+        backend = self._ensure()
+        return backend.glance_right(amplitude=self._clamp_amplitude(amplitude), hold_s=hold_s)
 
     def look_left(self, amplitude: int = 250, hold_s: float = 0.15):
         return self.left(amplitude=amplitude, hold_s=hold_s)
